@@ -8,6 +8,7 @@ from mcp.server.fastmcp import FastMCP
 
 from mealie import MealieFetcher
 from prompts import register_prompts
+from settings import load_server_settings
 from tools import register_all_tools
 
 # Load environment variables first
@@ -25,7 +26,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mealie-mcp")
 
-mcp = FastMCP("mealie")
+server_settings = load_server_settings()
+mcp = FastMCP(
+    "mealie",
+    host=server_settings.host,
+    port=server_settings.port,
+    streamable_http_path=server_settings.streamable_http_path,
+    stateless_http=server_settings.stateless_http,
+    json_response=server_settings.json_response,
+)
 
 MEALIE_BASE_URL = os.getenv("MEALIE_BASE_URL")
 MEALIE_API_KEY = os.getenv("MEALIE_API_KEY")
@@ -52,8 +61,13 @@ register_all_tools(mcp, mealie)
 
 def main():
     try:
-        logger.info({"message": "Starting Mealie MCP Server"})
-        mcp.run(transport="stdio")
+        logger.info(
+            {
+                "message": "Starting Mealie MCP Server",
+                "transport": server_settings.transport,
+            }
+        )
+        mcp.run(transport=server_settings.transport)
     except Exception as e:
         logger.critical(
             {"message": "Fatal error in Mealie MCP Server", "error": str(e)}

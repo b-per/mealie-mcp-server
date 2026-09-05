@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote
 
 from utils import format_api_params
 
@@ -8,6 +9,30 @@ logger = logging.getLogger("mealie-mcp")
 
 class RecipeMixin:
     """Mixin class for recipe-related API endpoints"""
+
+    def recipe_url(self, slug: str) -> str:
+        """Build the browser URL for a recipe on this Mealie instance."""
+        if not slug:
+            raise ValueError("Recipe slug cannot be empty")
+        return f"{self.base_url}/g/home/r/{quote(slug, safe='')}"
+
+    def add_recipe_urls(self, response: Any) -> Any:
+        """Add ``recipeUrl`` to a recipe or paginated recipe response."""
+        if not isinstance(response, dict):
+            return response
+
+        enriched = dict(response)
+        slug = enriched.get("slug")
+        if slug:
+            enriched["recipeUrl"] = self.recipe_url(str(slug))
+
+        items = enriched.get("items")
+        if isinstance(items, list):
+            enriched["items"] = [
+                self.add_recipe_urls(item) if isinstance(item, dict) else item
+                for item in items
+            ]
+        return enriched
 
     def get_recipes(
         self,

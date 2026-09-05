@@ -150,14 +150,16 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
                     "require_all_categories": require_all_categories,
                 }
             )
-            return mealie.get_recipes(
-                search=search,
-                page=page,
-                per_page=per_page,
-                categories=categories,
-                tags=tags,
-                require_all_tags=require_all_tags,
-                require_all_categories=require_all_categories,
+            return mealie.add_recipe_urls(
+                mealie.get_recipes(
+                    search=search,
+                    page=page,
+                    per_page=per_page,
+                    categories=categories,
+                    tags=tags,
+                    require_all_tags=require_all_tags,
+                    require_all_categories=require_all_categories,
+                )
             )
         except Exception as e:
             error_msg = f"Error fetching recipes: {str(e)}"
@@ -182,7 +184,7 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         """
         try:
             logger.info({"message": "Fetching recipe", "slug": slug})
-            return mealie.get_recipe(slug)
+            return mealie.add_recipe_urls(mealie.get_recipe(slug))
         except Exception as e:
             error_msg = f"Error fetching recipe with slug '{slug}': {str(e)}"
             logger.error({"message": error_msg})
@@ -207,22 +209,24 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             logger.info({"message": "Fetching recipe", "slug": slug})
             recipe_json = mealie.get_recipe(slug)
             recipe = Recipe.model_validate(recipe_json)
-            return recipe.model_dump(
-                include={
-                    "name",
-                    "slug",
-                    "recipeServings",
-                    "recipeYieldQuantity",
-                    "recipeYield",
-                    "totalTime",
-                    "rating",
-                    "orgURL",
-                    "tags",
-                    "tools",
-                    "recipeIngredient",
-                    "lastMade",
-                },
-                exclude_none=True,
+            return mealie.add_recipe_urls(
+                recipe.model_dump(
+                    include={
+                        "name",
+                        "slug",
+                        "recipeServings",
+                        "recipeYieldQuantity",
+                        "recipeYield",
+                        "totalTime",
+                        "rating",
+                        "orgURL",
+                        "tags",
+                        "tools",
+                        "recipeIngredient",
+                        "lastMade",
+                    },
+                    exclude_none=True,
+                )
             )
         except Exception as e:
             error_msg = f"Error fetching recipe with slug '{slug}': {str(e)}"
@@ -266,7 +270,9 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             recipe.recipeIngredient = [_build_ingredient(i) for i in ingredients]
             recipe.recipeInstructions = [_build_instruction(i) for i in instructions]
             _normalize_references(recipe)
-            return mealie.update_recipe(slug, recipe.model_dump(exclude_none=True))
+            return mealie.add_recipe_urls(
+                mealie.update_recipe(slug, recipe.model_dump(exclude_none=True))
+            )
         except Exception as e:
             error_msg = f"Error creating recipe '{name}': {str(e)}"
             logger.error({"message": error_msg})
@@ -305,7 +311,7 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         try:
             logger.info({"message": "Importing recipe from URL", "url": url})
             slug = mealie.import_recipe_from_url(url, include_tags=include_tags)
-            return mealie.get_recipe(slug)
+            return mealie.add_recipe_urls(mealie.get_recipe(slug))
         except Exception as e:
             error_msg = f"Error importing recipe from URL '{url}': {str(e)}"
             logger.error({"message": error_msg})
@@ -340,7 +346,9 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             recipe.recipeIngredient = [_build_ingredient(i) for i in ingredients]
             recipe.recipeInstructions = [_build_instruction(i) for i in instructions]
             _normalize_references(recipe)
-            return mealie.update_recipe(slug, recipe.model_dump(exclude_none=True))
+            return mealie.add_recipe_urls(
+                mealie.update_recipe(slug, recipe.model_dump(exclude_none=True))
+            )
         except Exception as e:
             error_msg = f"Error updating recipe '{slug}': {str(e)}"
             logger.error({"message": error_msg})
@@ -436,7 +444,7 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
                 mealie.scrape_recipe_image_from_url(slug, image_url)
                 updated = mealie.get_recipe(slug)
 
-            return updated
+            return mealie.add_recipe_urls(updated)
         except Exception as e:
             error_msg = f"Error creating full recipe '{name}': {str(e)}"
             logger.error({"message": error_msg})
@@ -509,7 +517,7 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             if not recipe_data:
                 raise ValueError("At least one field must be provided to update")
 
-            return mealie.patch_recipe(slug, recipe_data)
+            return mealie.add_recipe_urls(mealie.patch_recipe(slug, recipe_data))
         except Exception as e:
             error_msg = f"Error patching recipe '{slug}': {str(e)}"
             logger.error({"message": error_msg})
@@ -531,7 +539,7 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         """
         try:
             logger.info({"message": "Duplicating recipe", "slug": slug, "name": name})
-            return mealie.duplicate_recipe(slug, name)
+            return mealie.add_recipe_urls(mealie.duplicate_recipe(slug, name))
         except Exception as e:
             error_msg = f"Error duplicating recipe '{slug}': {str(e)}"
             logger.error({"message": error_msg})
@@ -552,7 +560,7 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         """
         try:
             logger.info({"message": "Marking recipe as last made", "slug": slug})
-            return mealie.update_recipe_last_made(slug)
+            return mealie.add_recipe_urls(mealie.update_recipe_last_made(slug))
         except Exception as e:
             error_msg = f"Error updating recipe last made '{slug}': {str(e)}"
             logger.error({"message": error_msg})
@@ -672,7 +680,9 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         """
         try:
             logger.info({"message": "Setting recipe categories", "slug": slug, "category_ids": category_ids})
-            return mealie.set_recipe_categories(slug, category_ids)
+            return mealie.add_recipe_urls(
+                mealie.set_recipe_categories(slug, category_ids)
+            )
         except Exception as e:
             error_msg = f"Error setting categories on recipe '{slug}': {str(e)}"
             logger.error({"message": error_msg})
@@ -694,7 +704,7 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         """
         try:
             logger.info({"message": "Setting recipe tags", "slug": slug, "tag_ids": tag_ids})
-            return mealie.set_recipe_tags(slug, tag_ids)
+            return mealie.add_recipe_urls(mealie.set_recipe_tags(slug, tag_ids))
         except Exception as e:
             error_msg = f"Error setting tags on recipe '{slug}': {str(e)}"
             logger.error({"message": error_msg})
@@ -721,7 +731,11 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         """
         try:
             logger.info({"message": "Updating recipe categories and tags", "slug": slug})
-            return mealie.set_recipe_categories_and_tags(slug, category_ids=category_ids, tag_ids=tag_ids)
+            return mealie.add_recipe_urls(
+                mealie.set_recipe_categories_and_tags(
+                    slug, category_ids=category_ids, tag_ids=tag_ids
+                )
+            )
         except Exception as e:
             error_msg = f"Error updating categories/tags on recipe '{slug}': {str(e)}"
             logger.error({"message": error_msg})

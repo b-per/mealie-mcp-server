@@ -13,6 +13,8 @@ A comprehensive Model Context Protocol (MCP) server that enables AI assistants t
 - **Image Management**: Upload images or scrape from URLs
 - **Asset Uploads**: Attach documents and files to recipes
 - **Metadata Tracking**: Mark recipes as made, track last made dates
+- **Browser Links**: Recipe responses include a complete `recipeUrl`
+- **Ingredient Parsing**: Use the same server-side parser as Mealie's Parse action
 
 ### 🛒 Shopping Lists
 
@@ -74,6 +76,25 @@ Run directly from GitHub without cloning:
 ```
 
 Restart Claude Desktop to load the server.
+
+### Streamable HTTP
+
+The default transport remains stdio. For a remote or containerized MCP client,
+run the server with MCP Streamable HTTP enabled:
+
+```bash
+MEALIE_BASE_URL=https://your-mealie-instance.com \
+MEALIE_API_KEY=your-mealie-api-key \
+MCP_TRANSPORT=streamable-http \
+MCP_HOST=0.0.0.0 \
+MCP_PORT=8000 \
+uv run mealie-mcp-server
+```
+
+The endpoint is `http://HOST:PORT/mcp` by default. Change it with
+`MCP_HTTP_PATH`. `MCP_STATELESS_HTTP` and `MCP_JSON_RESPONSE` accept `true` or
+`false`. Put authentication and TLS in front of the endpoint before exposing it
+outside a trusted network; this server does not add HTTP authentication.
 
 ## 📖 Usage Examples
 
@@ -191,6 +212,15 @@ Restart Claude Desktop to load the server.
 - `update_tool` - Update tool
 - `delete_tool` - Delete tool
 
+### Ingredient Parser Tools (3 operations)
+
+- `parse_ingredient` - Parse one line with Mealie's parser
+- `parse_ingredients` - Parse a whole ingredient list in one request
+- `reparse_recipe_ingredients` - Parse and save every ingredient in an existing recipe
+
+All parser tools accept `accept_language` (for example `fr` or `fr-FR`) so the
+request matches the language-aware behavior of Mealie's web UI.
+
 ### Meal Plan Tools (4 operations)
 
 - `get_all_mealplans` - List meal plans
@@ -198,7 +228,7 @@ Restart Claude Desktop to load the server.
 - `create_mealplan_bulk` - Create multiple entries
 - `get_todays_mealplan` - Get today's meals
 
-**Total: 62 tools** providing comprehensive Mealie API coverage
+**Total: 71 tools** providing comprehensive Mealie API coverage
 
 ## 🔧 Development
 
@@ -276,6 +306,24 @@ When filtering recipes, you **must use slugs or UUIDs**, not display names:
 ```
 
 Use `get_tags()` or `get_categories()` first to find the correct slugs.
+
+### Recipe links
+
+Recipe results retain Mealie's `id` and `slug` and also include a directly
+openable `recipeUrl`, such as
+`https://mealie.example/g/home/r/pasta-carbonara`.
+
+### Parsing imported ingredients
+
+To reproduce Mealie's Parse action after a scraper import, call:
+
+```text
+reparse_recipe_ingredients(slug="pate-a-crepes", accept_language="fr")
+```
+
+For a new recipe, `parse_ingredients` resolves all free-text lines in one API
+request. Its compact output includes quantity, unit, food, and note; those fields
+can be passed as structured ingredients to `create_recipe_full`.
 
 ### Field Preservation
 

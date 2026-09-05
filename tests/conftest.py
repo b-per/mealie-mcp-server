@@ -32,6 +32,22 @@ BASE_RECIPE = {
 }
 
 
+def _parsed_ingredient(text):
+    return {
+        "input": text,
+        "confidence": {"average": 0.98, "quantity": 1.0},
+        "ingredient": {
+            "quantity": 0.25,
+            "unit": None,
+            "food": {
+                "id": "a0819c33-1a5e-4374-9151-ed85160c0049",
+                "name": "onion",
+            },
+            "note": "chopped",
+        },
+    }
+
+
 class FakeFetcher(MealieFetcher):
     """MealieFetcher with the network layer replaced by a recorder.
 
@@ -43,6 +59,7 @@ class FakeFetcher(MealieFetcher):
         self.requests = []
         self.created_slug = "test-recipe"
         self.recipe = dict(BASE_RECIPE)
+        self.base_url = "https://mealie.example"
 
     def _handle_request(self, method, url, **kwargs):
         self.requests.append(
@@ -51,6 +68,7 @@ class FakeFetcher(MealieFetcher):
                 "url": url,
                 "json": kwargs.get("json"),
                 "params": kwargs.get("params"),
+                "headers": kwargs.get("headers"),
             }
         )
         if method == "POST" and url == "/api/recipes":
@@ -61,6 +79,13 @@ class FakeFetcher(MealieFetcher):
             return self.created_slug
         if method == "GET" and url.startswith("/api/recipes/") and url.count("/") == 3:
             return dict(self.recipe)
+        if method == "POST" and url == "/api/parser/ingredient":
+            return _parsed_ingredient((kwargs.get("json") or {}).get("ingredient"))
+        if method == "POST" and url == "/api/parser/ingredients":
+            return [
+                _parsed_ingredient(line)
+                for line in (kwargs.get("json") or {}).get("ingredients", [])
+            ]
         if method in ("PUT", "PATCH") and url.startswith("/api/recipes/"):
             return kwargs.get("json", {})
         # single-record GET (the fetch-merge update path reads the existing record)

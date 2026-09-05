@@ -27,10 +27,11 @@ class MealieClient:
         if not api_key:
             raise ValueError("API key cannot be empty")
 
+        self.base_url = base_url.rstrip("/")
         logger.debug({"message": "Initializing MealieClient", "base_url": base_url})
         try:
             self._client = httpx.Client(
-                base_url=base_url,
+                base_url=self.base_url,
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     # Don't set Content-Type here - let httpx set it per request
@@ -81,7 +82,7 @@ class MealieClient:
             # For JSON requests, explicitly set Content-Type
             # For multipart requests (files), httpx will set the correct Content-Type with boundary
             if "json" in kwargs and "files" not in kwargs:
-                if "headers" not in kwargs:
+                if not kwargs.get("headers"):
                     kwargs["headers"] = {}
                 kwargs["headers"]["Content-Type"] = "application/json"
 
