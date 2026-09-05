@@ -4,7 +4,7 @@ import os
 import traceback
 
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mealie import MealieFetcher
 from prompts import register_prompts
@@ -27,14 +27,7 @@ logging.basicConfig(
 logger = logging.getLogger("mealie-mcp")
 
 server_settings = load_server_settings()
-mcp = FastMCP(
-    "mealie",
-    host=server_settings.host,
-    port=server_settings.port,
-    streamable_http_path=server_settings.streamable_http_path,
-    stateless_http=server_settings.stateless_http,
-    json_response=server_settings.json_response,
-)
+mcp = FastMCP("mealie")
 
 MEALIE_BASE_URL = os.getenv("MEALIE_BASE_URL")
 MEALIE_API_KEY = os.getenv("MEALIE_API_KEY")
@@ -67,7 +60,17 @@ def main():
                 "transport": server_settings.transport,
             }
         )
-        mcp.run(transport=server_settings.transport)
+        if server_settings.transport == "stdio":
+            mcp.run(transport="stdio")
+        else:
+            mcp.run(
+                transport=server_settings.transport,
+                host=server_settings.host,
+                port=server_settings.port,
+                path=server_settings.streamable_http_path,
+                stateless_http=server_settings.stateless_http,
+                json_response=server_settings.json_response,
+            )
     except Exception as e:
         logger.critical(
             {"message": "Fatal error in Mealie MCP Server", "error": str(e)}

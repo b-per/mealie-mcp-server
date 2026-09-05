@@ -1,7 +1,7 @@
 """Tests for Mealie's server-side ingredient parser tools."""
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ToolError, ValidationError
 
 
 async def test_parse_ingredient_uses_ui_endpoint_and_language(invoke, fetcher):
@@ -42,7 +42,7 @@ async def test_parse_ingredient_verbose_returns_mealie_response(invoke):
 
 
 async def test_parse_ingredient_rejects_unknown_parser(invoke, fetcher):
-    with pytest.raises(ToolError):
+    with pytest.raises(ValidationError):
         await invoke("parse_ingredient", ingredient="2 eggs", parser="magic")
     assert fetcher.last("POST", "/api/parser/ingredient") is None
 

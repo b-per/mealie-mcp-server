@@ -7,7 +7,8 @@
 - `src/tools/` contains FastMCP-facing tool registrations.
 - `src/models/` contains Pydantic request and response models.
 - `src/server.py` wires configuration, the client, prompts, and tools together.
-- Use the SDK import `from mcp.server.fastmcp import FastMCP`; there is no standalone `fastmcp` dependency.
+- Use the standalone import `from fastmcp import FastMCP`; Horizon deployments
+  require the `fastmcp` package to be declared directly.
 
 ## Development workflow
 
@@ -34,4 +35,3 @@
 3. Add the FastMCP wrapper in `src/tools/`.
 4. Register and export the wrapper through `src/tools/__init__.py`.
 5. Add tests for request method, URL, parameters or payload, validation, success, and failure behavior.
-

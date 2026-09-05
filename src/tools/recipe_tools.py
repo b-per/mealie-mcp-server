@@ -4,8 +4,8 @@ import traceback
 import uuid
 from typing import Any, Dict, List, Optional, Union
 
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 
 from mealie import MealieFetcher
 from models.recipe import (

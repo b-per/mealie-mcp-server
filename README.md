@@ -257,7 +257,7 @@ cp .env.template .env
 4. Run MCP inspector for testing:
 
 ```bash
-uv run mcp dev src/server.py
+uv run fastmcp dev src/server.py
 ```
 
 ### Project Structure

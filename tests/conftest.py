@@ -9,7 +9,7 @@ import os
 import sys
 
 import pytest
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -185,7 +185,13 @@ def invoke(server):
 
     async def _invoke(tool_name, /, **arguments):
         result = await mcp.call_tool(tool_name, arguments)
-        content, structured = result if isinstance(result, tuple) else (result, None)
+        if hasattr(result, "structured_content"):
+            content = result.content
+            structured = result.structured_content
+        else:
+            content, structured = (
+                result if isinstance(result, tuple) else (result, None)
+            )
         if isinstance(structured, dict) and set(structured.keys()) == {"result"}:
             return structured["result"]
         if structured is not None:

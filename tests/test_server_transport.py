@@ -27,7 +27,11 @@ def test_main_runs_streamable_http_when_configured(monkeypatch):
     server_module.mcp.run = Mock()
     server_module.main()
 
-    server_module.mcp.run.assert_called_once_with(transport="streamable-http")
-    assert server_module.mcp.settings.host == "0.0.0.0"
-    assert server_module.mcp.settings.port == 9001
-    assert server_module.mcp.settings.streamable_http_path == "/recipes-mcp"
+    server_module.mcp.run.assert_called_once_with(
+        transport="streamable-http",
+        host="0.0.0.0",
+        port=9001,
+        path="/recipes-mcp",
+        stateless_http=False,
+        json_response=False,
+    )
