@@ -4,6 +4,7 @@ These assert the REST method, path, and payload each tool builds.
 """
 
 import pytest
+from fastmcp.exceptions import ToolError
 
 # --- Foods ---------------------------------------------------------------
 
@@ -12,6 +13,29 @@ async def test_get_foods_forwards_search_and_pagination(invoke, fetcher):
     await invoke("get_foods", search="Reis", per_page=10)
     req = fetcher.last("GET", "/api/foods")
     assert req["params"] == {"search": "Reis", "perPage": 10}
+
+
+async def test_get_unlabeled_foods_is_filtered_and_bounded(invoke, fetcher):
+    await invoke("get_unlabeled_foods", limit=12)
+    req = fetcher.last("GET", "/api/foods")
+    assert req["params"] == {
+        "page": 1,
+        "perPage": 12,
+        "queryFilter": "label_id IS NULL",
+        "orderBy": "created_at",
+        "orderDirection": "desc",
+    }
+
+
+async def test_get_unlabeled_foods_rejects_excessive_limit(invoke):
+    with pytest.raises(ToolError, match="Limit must be between 1 and 100"):
+        await invoke("get_unlabeled_foods", limit=101)
+
+
+async def test_get_food_labels(invoke, fetcher):
+    await invoke("get_food_labels", search="Produce", per_page=20)
+    req = fetcher.last("GET", "/api/groups/labels")
+    assert req["params"] == {"search": "Produce", "perPage": 20}
 
 
 async def test_create_food(invoke, fetcher):
@@ -31,6 +55,49 @@ async def test_update_food(invoke, fetcher):
     # fetch-merge: id kept, change applied (see test_bugfixes for full merge)
     assert req["json"]["id"] == "f1"
     assert req["json"]["description"] == "grain"
+
+
+async def test_set_food_label_preserves_food_and_sets_label(invoke, fetcher):
+    await invoke("set_food_label", food_id="f1", label_id="label-1")
+    req = fetcher.last("PUT", "/api/foods/f1")
+    assert req["json"]["id"] == "f1"
+    assert req["json"]["name"] == "Existing"
+    assert req["json"]["labelId"] == "label-1"
+
+
+async def test_set_food_labels_bulk_updates_each_food(invoke, fetcher):
+    result = await invoke(
+        "set_food_labels_bulk",
+        assignments=[
+            {"food_id": "f1", "label_id": "label-1"},
+            {"food_id": "f2", "label_id": "label-2"},
+        ],
+    )
+    assert result["count"] == 2
+    puts = [
+        request
+        for request in fetcher.requests
+        if request["method"] == "PUT" and request["url"].startswith("/api/foods/")
+    ]
+    assert [request["url"] for request in puts] == [
+        "/api/foods/f1",
+        "/api/foods/f2",
+    ]
+    assert [request["json"]["labelId"] for request in puts] == [
+        "label-1",
+        "label-2",
+    ]
+
+
+async def test_set_food_labels_bulk_rejects_duplicate_foods(invoke):
+    with pytest.raises(ToolError, match="Duplicate food_id"):
+        await invoke(
+            "set_food_labels_bulk",
+            assignments=[
+                {"food_id": "f1", "label_id": "label-1"},
+                {"food_id": "f1", "label_id": "label-2"},
+            ],
+        )
 
 
 async def test_delete_food(invoke, fetcher):
@@ -103,9 +170,13 @@ async def test_delete_tool(invoke, fetcher):
     "tool_name",
     [
         "get_foods",
+        "get_unlabeled_foods",
+        "get_food_labels",
         "create_food",
         "get_food",
         "update_food",
+        "set_food_label",
+        "set_food_labels_bulk",
         "delete_food",
         "get_units",
         "create_unit",

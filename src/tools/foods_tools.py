@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
@@ -41,6 +41,62 @@ def register_foods_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             return mealie.get_foods(search=search, page=page, per_page=per_page)
         except Exception as e:
             error_msg = f"Error fetching foods: {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def get_unlabeled_foods(limit: int = 25) -> Dict[str, Any]:
+        """Get the newest foods that do not have a label.
+
+        This performs one server-side filtered request; use it instead of
+        paging through get_foods and filtering locally.
+
+        Args:
+            limit: Maximum number of foods to return (1-100).
+
+        Returns:
+            Dict[str, Any]: Unlabeled foods, newest first, with pagination metadata.
+        """
+        try:
+            logger.info({"message": "Fetching unlabeled foods", "limit": limit})
+            return mealie.get_unlabeled_foods(limit=limit)
+        except Exception as e:
+            error_msg = f"Error fetching unlabeled foods: {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def get_food_labels(
+        search: Optional[str] = None,
+        page: Optional[int] = None,
+        per_page: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """List labels that can be assigned to foods.
+
+        Mealie calls these multi-purpose labels; the foods screen uses them as
+        ingredient categories. Use this before set_food_label to resolve an ID.
+
+        Args:
+            search: Optional label-name search.
+            page: Page number to retrieve.
+            per_page: Number of labels to return.
+
+        Returns:
+            Dict[str, Any]: Food labels under ``items`` with pagination metadata.
+        """
+        try:
+            logger.info({"message": "Fetching food labels", "search": search})
+            return mealie.get_food_labels(
+                search=search, page=page, per_page=per_page
+            )
+        except Exception as e:
+            error_msg = f"Error fetching food labels: {str(e)}"
             logger.error({"message": error_msg})
             logger.debug(
                 {"message": "Error traceback", "traceback": traceback.format_exc()}
@@ -132,6 +188,63 @@ def register_foods_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             return mealie.update_food(food_id, food_data)
         except Exception as e:
             error_msg = f"Error updating food '{food_id}': {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def set_food_label(food_id: str, label_id: str) -> Dict[str, Any]:
+        """Assign an existing label to a food.
+
+        Use get_food_labels first to resolve the label ID. This label is shared
+        anywhere the food is used, including recipes and shopping lists.
+
+        Args:
+            food_id: UUID of the food to categorize.
+            label_id: UUID of the existing label to assign.
+
+        Returns:
+            Dict[str, Any]: The updated food.
+        """
+        try:
+            logger.info({"message": "Setting food label", "food_id": food_id})
+            return mealie.set_food_label(food_id, label_id)
+        except Exception as e:
+            error_msg = f"Error setting label for food '{food_id}': {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def set_food_labels_bulk(
+        assignments: List[Dict[str, str]],
+    ) -> Dict[str, Any]:
+        """Assign existing labels to multiple foods in one MCP call.
+
+        Mealie has no bulk food-update endpoint, so this safely fetches and
+        updates each food in sequence. If one update fails, earlier successful
+        assignments remain applied and the tool reports the failure.
+
+        Args:
+            assignments: Objects containing ``food_id`` and ``label_id``.
+
+        Returns:
+            Dict[str, Any]: Count and updated food records.
+        """
+        try:
+            logger.info(
+                {
+                    "message": "Setting food labels in bulk",
+                    "count": len(assignments),
+                }
+            )
+            return mealie.set_food_labels_bulk(assignments)
+        except Exception as e:
+            error_msg = f"Error setting food labels in bulk: {str(e)}"
             logger.error({"message": error_msg})
             logger.debug(
                 {"message": "Error traceback", "traceback": traceback.format_exc()}

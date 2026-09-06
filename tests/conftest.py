@@ -125,6 +125,7 @@ class FakeFetcher(MealieFetcher):
         # list endpoints
         if method == "GET" and url in (
             "/api/foods",
+            "/api/groups/labels",
             "/api/units",
             "/api/organizers/tools",
         ):

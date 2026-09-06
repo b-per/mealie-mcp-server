@@ -190,11 +190,15 @@ outside a trusted network; this server does not add HTTP authentication.
 - `update_tag` - Update tag
 - `delete_tag` - Delete tag
 
-### Food Tools (5 operations)
+### Food Tools (9 operations)
 - `get_foods` - List/search foods (resolve ids for structured ingredients)
+- `get_unlabeled_foods` - List newest foods without labels in one filtered request
+- `get_food_labels` - List/search labels that can be assigned to foods
 - `create_food` - Create a new food
 - `get_food` - Get by ID
 - `update_food` - Update food
+- `set_food_label` - Assign an existing label to a food
+- `set_food_labels_bulk` - Assign labels to multiple foods in one MCP call
 - `delete_food` - Delete food
 
 ### Unit Tools (5 operations)
@@ -228,7 +232,7 @@ request matches the language-aware behavior of Mealie's web UI.
 - `create_mealplan_bulk` - Create multiple entries
 - `get_todays_mealplan` - Get today's meals
 
-**Total: 71 tools** providing comprehensive Mealie API coverage
+**Total: 75 tools** providing comprehensive Mealie API coverage
 
 ## 🔧 Development
 
