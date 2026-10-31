@@ -8,7 +8,7 @@ and returns canned responses. No network access is required.
 from copy import deepcopy
 
 import pytest
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mealie import MealieFetcher
 from mealie.client import MealieApiError
@@ -269,7 +269,7 @@ def invoke(server):
 
     async def _invoke(tool_name, /, **arguments):
         result = await mcp.call_tool(tool_name, arguments)
-        content, structured = result if isinstance(result, tuple) else (result, None)
+        content, structured = result.content, result.structured_content
         if isinstance(structured, dict) and set(structured.keys()) == {"result"}:
             return structured["result"]
         if structured is not None:

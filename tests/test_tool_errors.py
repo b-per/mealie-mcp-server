@@ -2,7 +2,7 @@ import logging
 
 import httpx
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ToolError
 from pydantic import BaseModel, field_validator
 
 from mealie.client import MealieApiError
@@ -100,3 +100,15 @@ def test_success_does_not_log(caplog):
             result = {"items": []}
     assert result == {"items": []}
     assert not caplog.records
+
+
+async def test_framework_validation_does_not_disclose_input(invoke, fetcher, caplog):
+    with caplog.at_level(logging.DEBUG):
+        with pytest.raises(ToolError, match="Invalid input") as caught:
+            await invoke(
+                "create_recipe", name="private-recipe-name",
+                ingredients=[{"quantity": "private-invalid-quantity"}],
+            )
+    assert "private-" not in str(caught.value)
+    assert "private-" not in caplog.text
+    assert fetcher.requests == []

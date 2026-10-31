@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mealie import MealieFetcher
 from prompts import register_prompts
@@ -25,6 +25,9 @@ class ServerConfig:
     port: int = 8765
     log_level: str = "INFO"
     enable_ai_import: bool = False
+    http_path: str = "/mcp"
+    stateless_http: bool = False
+    json_response: bool = False
 
     @classmethod
     def from_environment(cls) -> "ServerConfig":
@@ -38,11 +41,11 @@ class ServerConfig:
             raise ValueError(
                 "MEALIE_BASE_URL and MEALIE_API_KEY must be set in environment variables."
             )
-        transport = os.getenv("MCP_TRANSPORT", "stdio")
+        transport = os.getenv("MCP_TRANSPORT", "stdio").strip().lower()
         if transport not in ("stdio", "sse", "streamable-http"):
             raise ValueError("MCP_TRANSPORT must be stdio, sse, or streamable-http")
         try:
-            port = int(os.getenv("MCP_PORT", "8765"))
+            port = int(os.getenv("MCP_PORT", os.getenv("PORT", "8765")))
         except ValueError:
             raise ValueError("MCP_PORT must be an integer between 1 and 65535") from None
         if not 1 <= port <= 65535:
@@ -57,11 +60,21 @@ class ServerConfig:
             base_url=base_url,
             api_key=api_key,
             transport=transport,
-            host=os.getenv("MCP_HOST", "127.0.0.1"),
+            host=os.getenv("MCP_HOST", os.getenv("HOST", "127.0.0.1")),
             port=port,
             log_level=log_level,
             enable_ai_import=ai_import == "true",
+            http_path="/" + os.getenv("MCP_HTTP_PATH", "/mcp").strip().lstrip("/"),
+            stateless_http=_environment_bool("MCP_STATELESS_HTTP"),
+            json_response=_environment_bool("MCP_JSON_RESPONSE"),
         )
+
+
+def _environment_bool(name: str) -> bool:
+    value = os.getenv(name, "false").strip().lower()
+    if value not in ("true", "false", "1", "0", "yes", "no", "on", "off"):
+        raise ValueError(f"{name} must be true or false")
+    return value in ("true", "1", "yes", "on")
 
 
 def _configure_logging(level: str) -> None:
@@ -123,10 +136,8 @@ class _MealieServer(FastMCP):
 
         super().__init__(
             "mealie",
-            host=config.host if config else "127.0.0.1",
-            port=config.port if config else 8765,
-            log_level=config.log_level if config else "INFO",
             lifespan=lifespan,
+            mask_error_details=True,
         )
 
     def _configure_optional_tools(self) -> None:
@@ -135,38 +146,25 @@ class _MealieServer(FastMCP):
             register_ai_import_tools(self, self.client_provider)
             self._ai_import_registered = True
 
-    def run(self, transport: Transport = "stdio", mount_path: str | None = None) -> None:
+    def run(self, transport: Transport | None = None, **transport_kwargs: Any) -> None:
         config = self.client_provider.configuration()
         self._configure_optional_tools()
-        self.settings.host = config.host
-        self.settings.port = config.port
-        self.settings.log_level = config.log_level
         _configure_logging(config.log_level)
+        transport = transport or config.transport
+        options: dict[str, Any] = {"show_banner": False, "log_level": config.log_level}
+        if transport != "stdio":
+            options.update(host=config.host, port=config.port)
+            if transport == "streamable-http":
+                options.update(
+                    path=config.http_path,
+                    stateless_http=config.stateless_http,
+                    json_response=config.json_response,
+                )
+        options.update(transport_kwargs)
         # Uvicorn consumes ASGI startup exceptions; fail before entering it so
         # unsuccessful health checks also produce a failing console exit status.
         with self.client_provider.acquire():
-            super().run(transport=transport, mount_path=mount_path)
-
-    def _application_lifespan(self, app):
-        original_lifespan = app.router.lifespan_context
-
-        @asynccontextmanager
-        async def lifespan(application):
-            self._configure_optional_tools()
-            # SDK lifespans are per MCP session. HTTP also needs an outer owner
-            # to check health at startup and keep the client alive between sessions.
-            async with self.client_provider.lifespan():
-                async with original_lifespan(application) as state:
-                    yield state
-
-        app.router.lifespan_context = lifespan
-        return app
-
-    def streamable_http_app(self):
-        return self._application_lifespan(super().streamable_http_app())
-
-    def sse_app(self, mount_path: str | None = None):
-        return self._application_lifespan(super().sse_app(mount_path))
+            super().run(transport=transport, **options)
 
 
 def create_server(config: ServerConfig | None = None) -> FastMCP:
@@ -179,7 +177,7 @@ def create_server(config: ServerConfig | None = None) -> FastMCP:
     return server
 
 
-# The SDK's `mcp dev` command discovers this instance without needing credentials.
+# FastMCP can discover this instance without needing credentials.
 mcp = create_server()
 
 

@@ -8,8 +8,8 @@
 - [`src/models/`](src/models/) contains Pydantic request and response models.
 - [`src/server.py`](src/server.py) wires configuration, the client, prompts, and
   tools together.
-- Use the SDK import `from mcp.server.fastmcp import FastMCP`; there is no
-  standalone `fastmcp` dependency.
+- Use the standalone import `from fastmcp import FastMCP`; Horizon deployments
+  require the `fastmcp` package to be declared directly.
 
 ## Development Workflow
 

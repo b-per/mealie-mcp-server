@@ -47,5 +47,5 @@ These conventions supplement the [repository guidance](../AGENTS.md).
   reading Mealie configuration or opening an HTTP client. Configuration is loaded
   at runtime; FastMCP lifespans own client initialization and cleanup.
 - HTTP application lifespans must hold the client across MCP sessions and fail
-  startup on unsuccessful health checks. Preserve the outer HTTP owner when
-  changing the SDK's per-session lifespan wiring.
+  startup on unsuccessful health checks. Use the standalone FastMCP application lifespan when
+  changing transport wiring.

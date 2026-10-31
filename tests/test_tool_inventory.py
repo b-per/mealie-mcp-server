@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import NotFoundError
 
 from prompts import register_prompts
 
@@ -45,13 +45,13 @@ async def test_consolidated_inventory_matches_documentation(server):
 
 @pytest.mark.parametrize("name", REMOVED_TOOLS)
 async def test_removed_tool_names_are_rejected(invoke, fetcher, name):
-    with pytest.raises(ToolError, match="Unknown tool"):
+    with pytest.raises(NotFoundError, match="Unknown tool"):
         await invoke(name)
     assert fetcher.requests == []
 
 
 async def test_ai_import_is_not_callable_by_default(invoke, fetcher):
-    with pytest.raises(ToolError, match="Unknown tool"):
+    with pytest.raises(NotFoundError, match="Unknown tool"):
         await invoke("import_recipe_with_ai", content="recipe")
     assert fetcher.requests == []
 
@@ -59,7 +59,7 @@ async def test_ai_import_is_not_callable_by_default(invoke, fetcher):
 async def test_meal_planning_prompt_uses_consolidated_recipe_read(server):
     mcp, _ = server
     register_prompts(mcp)
-    result = await mcp.get_prompt("weekly_meal_plan")
+    result = await mcp.render_prompt("weekly_meal_plan")
     content = "\n".join(message.content.text for message in result.messages)
     assert "get_recipe:" in content
     assert "concise=true" in content

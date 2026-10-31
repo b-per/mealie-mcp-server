@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import httpx
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from mealie.client import MealieApiError
@@ -240,10 +240,10 @@ async def test_invalid_mealplan_delete_makes_no_requests(invoke, fetcher):
 
 async def test_typed_mealplan_bulk_tool_schema_preserves_envelope(server):
     mcp, _ = server
-    schemas = {tool.name: tool.inputSchema for tool in await mcp.list_tools()}
+    schemas = {tool.name: tool.parameters for tool in await mcp.list_tools()}
     meal_schema = schemas["create_mealplan_bulk"]
     assert "entries" in meal_schema["properties"]
-    meal = meal_schema["$defs"]["MealPlanEntry"]
+    meal = meal_schema["properties"]["entries"]["items"]
     assert {"date", "recipe_id", "title", "entry_type"} <= set(meal["properties"])
     assert meal["properties"]["entry_type"]["default"] == "breakfast"
     assert meal["properties"]["entry_type"]["enum"] == ["breakfast", "lunch", "dinner", "side"]

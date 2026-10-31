@@ -1,6 +1,7 @@
 from .ai_import_tools import register_ai_import_tools
 from .categories_tools import register_categories_tools
 from .foods_tools import register_foods_tools
+from .errors import SafeToolErrors
 from .mealplan_tools import register_mealplan_tools
 from .parser_tools import register_parser_tools
 from .recipe_tools import register_recipe_tools
@@ -12,6 +13,7 @@ from .units_tools import register_units_tools
 
 def register_all_tools(mcp, mealie, *, enable_ai_import: bool = False):
     """Register all tools with the MCP server."""
+    mcp.add_middleware(SafeToolErrors())
     register_recipe_tools(mcp, mealie)
     register_categories_tools(mcp, mealie)
     register_tags_tools(mcp, mealie)

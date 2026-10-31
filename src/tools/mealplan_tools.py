@@ -2,8 +2,8 @@ import json
 from typing import Any, Dict, List, Optional
 
 import httpx
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 
 from mealie import MealieFetcher
 from mealie.client import MealieApiError

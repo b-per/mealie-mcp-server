@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from mealie import MealieFetcher
 from models.shopping_list import ShoppingListItemCreate, ShoppingListItemUpdate

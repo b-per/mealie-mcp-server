@@ -4,7 +4,7 @@ import copy
 import logging
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ToolError
 
 
 ORGANIZERS = [
@@ -420,7 +420,7 @@ async def test_registered_schemas_remain_explicit(server, organizer):
         )
         assert f"get_{singular}_by_slug" not in tools
     for name, (properties, required) in expected.items():
-        schema = tools[name].inputSchema
+        schema = tools[name].parameters
         assert set(schema["properties"]) == properties
         assert set(schema.get("required", [])) == required
         for field in required:
@@ -432,6 +432,6 @@ async def test_registered_schemas_remain_explicit(server, organizer):
 async def test_lookup_descriptions_match_resource_contracts(server):
     mcp, _ = server
     tools = {tool.name: tool for tool in await mcp.list_tools()}
-    assert "associated recipes" not in tools["get_category"].description
-    assert "ID, slug, and name" in tools["get_category"].description
+    assert "associated recipes" not in tools["get_category"].fn.__doc__
+    assert "ID, slug, and name" in tools["get_category"].fn.__doc__
     assert "only if its ID appears" in tools["get_tools"].description

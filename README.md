@@ -46,19 +46,18 @@ such as Claude Desktop.
 
 ### Installation
 
-#### Option 1: Using the MCP SDK CLI (Recommended)
+#### Option 1: Using the FastMCP CLI (Recommended)
 
 Clone the repository, then install the server into Claude Desktop with the
-`mcp` command supplied by the Python MCP SDK (no standalone `fastmcp` package
-is needed):
+standalone `fastmcp` command (also required by Horizon deployments):
 
 ```bash
-git clone https://github.com/rldiao/mealie-mcp-server.git
+git clone https://github.com/b-per/mealie-mcp-server.git
 cd mealie-mcp-server
 uv sync --locked
-uv run mcp install src/server.py --with-editable . \
-  --env-var MEALIE_BASE_URL=https://your-mealie-instance.com \
-  --env-var MEALIE_API_KEY=your-mealie-api-key
+uv run fastmcp install claude-desktop src/server.py --with-editable . \
+  --env MEALIE_BASE_URL=https://your-mealie-instance.com \
+  --env MEALIE_API_KEY=your-mealie-api-key
 ```
 
 #### Option 2: Using uvx
@@ -73,7 +72,7 @@ cloning (in Claude Desktop, use `claude_desktop_config.json`):
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/rldiao/mealie-mcp-server",
+        "git+https://github.com/b-per/mealie-mcp-server",
         "mealie-mcp-server"
       ],
       "env": {
@@ -101,7 +100,12 @@ your instance details. Never commit your API key.
 | `MCP_TRANSPORT` | `stdio` | `stdio`, `streamable-http`, or legacy `sse` |
 | `MCP_HOST` | `127.0.0.1` | HTTP bind address; use `0.0.0.0` in containers |
 | `MCP_PORT` | `8765` | HTTP port, from 1 to 65535 |
+| `MCP_HTTP_PATH` | `/mcp` | Streamable HTTP endpoint path |
+| `MCP_STATELESS_HTTP` | `false` | Use stateless streamable HTTP requests |
+| `MCP_JSON_RESPONSE` | `false` | Return JSON instead of SSE for streamable HTTP calls |
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` |
+
+`HOST` and `PORT` are fallbacks when `MCP_HOST` and `MCP_PORT` are unset.
 
 ## Remote Access
 
@@ -320,7 +324,7 @@ scraping, and file uploads also perform different operations.
 
 Set `MEALIE_ENABLE_AI_IMPORT=true` in your MCP client's environment, shell, or
 local `.env`. Restart the server and refresh the client's tool list. This applies
-to stdio, SSE, and Streamable HTTP. Offline SDK discovery remains configuration-
+to stdio, SSE, and Streamable HTTP. Offline FastMCP discovery remains configuration-
 and network-free, listing only default tools; optional registration occurs at
 runtime startup (or when passing an explicit enabled `ServerConfig`).
 
@@ -387,7 +391,7 @@ cp .env.template .env
 Launch the MCP Inspector:
 
 ```bash
-uv run mcp dev src/server.py
+uv run fastmcp dev src/server.py
 ```
 
 Run the offline checks; these do not require a Mealie instance or credentials:

@@ -3,8 +3,8 @@ import logging
 from itertools import product
 
 import pytest
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 
 from tools import register_all_tools
 
@@ -32,9 +32,9 @@ async def test_ai_import_discovery(server):
         "import_recipe_with_ai" not in (other.description or "")
         for other in tools if other.name != tool.name
     )
-    assert not tool.inputSchema.get("required")
+    assert not tool.parameters.get("required")
     assert len(tool.description.split()) <= 80
-    assert set(tool.inputSchema["properties"]) == {
+    assert set(tool.parameters["properties"]) == {
         "content", "url", "image_paths", "translate_language", "create_new_organizers"
     }
     for name in ("import_recipe_from_url", "create_recipe", "upload_recipe_image_file"):

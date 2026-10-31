@@ -7,7 +7,7 @@ import uuid
 from copy import deepcopy
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ToolError
 
 from mealie.client import MealieApiError
 from tools.recipe_tools import _compose_recipe
@@ -19,7 +19,7 @@ async def test_recipe_creation_tool_schema_is_consolidated(server):
     names = [tool.name for tool in tools]
     assert names.count("create_recipe") == 1
     assert "create_recipe_full" not in names
-    schema = next(tool.inputSchema for tool in tools if tool.name == "create_recipe")
+    schema = next(tool.parameters for tool in tools if tool.name == "create_recipe")
     assert schema["required"] == ["name"]
     assert set(schema["properties"]) == {
         "name", "description", "org_url", "total_time", "prep_time", "cook_time",

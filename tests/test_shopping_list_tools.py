@@ -4,7 +4,7 @@ import logging
 from copy import deepcopy
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ToolError
 
 from mealie.client import MealieApiError
 from models.shopping_list import ShoppingListItemCreate, ShoppingListItemUpdate
@@ -230,13 +230,16 @@ async def test_invalid_shopping_inputs_make_no_requests(invoke, fetcher, tool, a
 
 async def test_typed_shopping_bulk_tool_schemas_preserve_envelopes(server):
     mcp, _ = server
-    schemas = {tool.name: tool.inputSchema for tool in await mcp.list_tools()}
-    for name, model in (
-        ("create_shopping_list_items_bulk", "ShoppingListItemCreate"),
-        ("update_shopping_list_items_bulk", "ShoppingListItemUpdate"),
+    schemas = {tool.name: tool.parameters for tool in await mcp.list_tools()}
+    for name, required in (
+        ("create_shopping_list_items_bulk", "shoppingListId"),
+        ("update_shopping_list_items_bulk", "id"),
     ):
         assert "items" in schemas[name]["properties"]
-        assert model in schemas[name]["$defs"]
+        item_schema = schemas[name]["properties"]["items"]["items"]
+        assert item_schema["type"] == "object"
+        assert item_schema["required"] == [required]
+        assert {"id", "quantity", "labelId"} <= set(item_schema["properties"])
 
 
 def test_shopping_models_normalize_aliases_without_injecting_defaults():

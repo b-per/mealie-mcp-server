@@ -3,7 +3,7 @@
 import logging
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ToolError
 
 FOOD_ID = "a0819c33-1a5e-4374-9151-ed85160c0049"
 

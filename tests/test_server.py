@@ -16,7 +16,8 @@ import pytest
 def load_server(monkeypatch, request):
     monkeypatch.setenv("MEALIE_BASE_URL", "http://mealie.invalid")
     monkeypatch.setenv("MEALIE_API_KEY", "test-placeholder")
-    for name in ("MCP_TRANSPORT", "MCP_HOST", "MCP_PORT", "MEALIE_ENABLE_AI_IMPORT"):
+    for name in ("MCP_TRANSPORT", "MCP_HOST", "MCP_PORT", "MEALIE_ENABLE_AI_IMPORT",
+                 "HOST", "PORT", "MCP_HTTP_PATH", "MCP_STATELESS_HTTP", "MCP_JSON_RESPONSE", "LOG_LEVEL"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr("dotenv.load_dotenv", lambda: None)
 
@@ -57,13 +58,13 @@ async def test_import_and_discovery_need_no_configuration_or_network(load_server
     dotenv.assert_not_called()
 
 
-def test_sdk_import_server_discovery_is_lazy(load_server, monkeypatch):
-    from mcp.cli.cli import _import_server
+async def test_fastmcp_import_server_discovery_is_lazy(load_server, monkeypatch):
+    from fastmcp.utilities.mcp_server_config.v1.sources.filesystem import FileSystemSource
 
     monkeypatch.delenv("MEALIE_BASE_URL")
     monkeypatch.delenv("MEALIE_API_KEY")
     _, _, requests, factory = load_server()
-    discovered = _import_server(Path("src/server.py").resolve())
+    discovered = await FileSystemSource(path=str(Path("src/server.py").resolve())).load_server()
     assert discovered.name == "mealie"
     factory.assert_not_called()
     assert requests == []
@@ -92,18 +93,39 @@ def test_transport_selection(load_server, monkeypatch, transport):
     with patch.object(server["FastMCP"], "run", autospec=True) as run:
         server["main"]()
     mcp = run.call_args.args[0]
-    assert mcp.settings.host == ("0.0.0.0" if transport else "127.0.0.1")
-    assert mcp.settings.port == (8766 if transport else 8765)
-    run.assert_called_once_with(mcp, transport=transport or "stdio", mount_path=None)
+    expected = {"transport": transport or "stdio", "show_banner": False, "log_level": "INFO"}
+    if transport:
+        expected.update(host="0.0.0.0", port=8766)
+    if transport == "streamable-http":
+        expected.update(path="/mcp", stateless_http=False, json_response=False)
+    run.assert_called_once_with(mcp, **expected)
     assert requests[0].url.path == "/api/app/about"
     factory.assert_called_once()
     assert client.is_closed
 
 
+def test_streamable_http_configuration_is_forwarded(load_server, monkeypatch):
+    for key, value in {
+        "MCP_TRANSPORT": "streamable-http", "HOST": "0.0.0.0", "PORT": "8000",
+        "MCP_HTTP_PATH": "custom/mcp", "MCP_STATELESS_HTTP": "yes",
+        "MCP_JSON_RESPONSE": "1",
+    }.items():
+        monkeypatch.setenv(key, value)
+    server, client, _, _ = load_server()
+    with patch.object(server["FastMCP"], "run", autospec=True) as run:
+        server["main"]()
+    assert run.call_args.kwargs == {
+        "transport": "streamable-http", "show_banner": False, "log_level": "INFO",
+        "host": "0.0.0.0", "port": 8000, "path": "/custom/mcp",
+        "stateless_http": True, "json_response": True,
+    }
+    assert client.is_closed
+
+
 def server_lifespan(mcp, transport):
     if transport == "stdio":
-        return mcp.settings.lifespan(mcp)
-    app = mcp.sse_app() if transport == "sse" else mcp.streamable_http_app()
+        return mcp._lifespan_manager()
+    app = mcp.http_app(transport=transport, stateless_http=False)
     return app.router.lifespan_context(app)
 
 
@@ -147,7 +169,7 @@ async def test_stdio_eof_runs_health_check_and_closes_client(load_server, monkey
             await input_send.aclose()
             yield input_receive, output_send
 
-    monkeypatch.setattr("mcp.server.fastmcp.server.stdio_server", empty_stdio)
+    monkeypatch.setattr(f"{server["FastMCP"].run_stdio_async.__module__}.stdio_server", empty_stdio)
     await server["mcp"].run_stdio_async()
     assert requests[0].url.path == "/api/app/about"
     factory.assert_called_once()
@@ -159,7 +181,7 @@ async def test_http_client_survives_individual_mcp_sessions(load_server):
     mcp = server["mcp"]
     async with server_lifespan(mcp, "streamable-http"):
         for _ in range(2):
-            async with mcp.settings.lifespan(mcp):
+            async with mcp._lifespan_manager():
                 assert not client.is_closed
             assert not client.is_closed
         factory.assert_called_once()
@@ -201,7 +223,7 @@ async def test_ai_import_lazy_runtime_registration(load_server, monkeypatch, val
         tools = await mcp.list_tools()
         assert len(tools) == (62 if enabled else 61)
         assert ("import_recipe_with_ai" in {t.name for t in tools}) is enabled
-        async with mcp.settings.lifespan(mcp):
+        async with mcp._lifespan_manager():
             assert len(await mcp.list_tools()) == len(tools)
     factory.assert_called_once()
 
@@ -293,7 +315,7 @@ async def test_http_sessions_initialize_list_and_call_tools(load_server, monkeyp
     monkeypatch.setattr("sse_starlette.sse.AppStatus.should_exit_event", None)
     monkeypatch.setenv("MEALIE_ENABLE_AI_IMPORT", str(enable_ai_import).lower())
     server, mealie_client, requests, factory = load_server()
-    app = server["mcp"].streamable_http_app()
+    app = server["mcp"].http_app(stateless_http=False)
     session_ids = set()
 
     async with app.router.lifespan_context(app):
