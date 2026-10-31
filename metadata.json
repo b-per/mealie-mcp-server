@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M6904F9DS91EQHAE5XEG01PC",
+  "strategy": "manual-commit",
+  "branch": "integrate/upstream-20261031",
+  "checkpoints_count": 4,
+  "files_touched": [
+    ".env.template",
+    "README.md",
+    "src/server.py",
+    "src/tools/__init__.py",
+    "src/tools/errors.py",
+    "src/tools/foods_tools.py",
+    "src/tools/shopping_list_tools.py",
+    "tests/conftest.py",
+    "tests/test_organizer_tools.py",
+    "tests/test_server.py",
+    "tests/test_tool_errors.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 150363,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3975936,
+    "output_tokens": 15666,
+    "api_call_count": 43,
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 15,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 14,
+      "credentialed_uri": 0,
+      "entropy": 1,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
