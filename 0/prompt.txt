@@ -1,0 +1,5 @@
+ok, well do the work to get me on top of upstream/main with my extra features.
+
+i don't really care about tool names and input/output format (and can adopt upstream ones) ; but I want to keep the features i added, either in existing tools or in new tools
+
+i also need streamable http support.
