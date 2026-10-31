@@ -1,0 +1,1 @@
+isn't it better to always be on top of remote main and handle commits on top? i don't want to have to do too much work to kepp up with teir work
