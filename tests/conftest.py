@@ -89,6 +89,7 @@ class FakeFetcher(MealieFetcher):
     """
 
     def __init__(self):
+        self.base_url = "https://mealie.example"
         self.requests = []
         self.created_slug = "test-recipe"
         self.recipe = deepcopy(BASE_RECIPE)
@@ -107,6 +108,7 @@ class FakeFetcher(MealieFetcher):
                 "url": url,
                 "json": deepcopy(kwargs.get("json")),
                 "params": deepcopy(kwargs.get("params")),
+                "headers": deepcopy(kwargs.get("headers")),
                 "files": kwargs.get("files"),
                 "data": deepcopy(kwargs.get("data")),
             }

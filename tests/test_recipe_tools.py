@@ -220,7 +220,7 @@ async def test_get_recipe_preserves_full_response(invoke, fetcher, arguments):
     fetcher.recipe["futureField"] = {"nested": [1, None]}
     fetcher.recipe["recipeInstructions"] = [{"text": "Cook."}]
     result = await invoke("get_recipe", slug="test-recipe", **arguments)
-    assert result == fetcher.recipe
+    assert result == {**fetcher.recipe, "recipeUrl": "https://mealie.example/g/home/r/test-recipe"}
     assert [(r["method"], r["url"]) for r in fetcher.requests] == [
         ("GET", "/api/recipes/test-recipe")
     ]

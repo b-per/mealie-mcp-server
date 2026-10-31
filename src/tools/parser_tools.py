@@ -44,7 +44,8 @@ def register_parser_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
 
     @mcp.tool()
     def parse_ingredients(
-        ingredients: List[str], parser: str = "nlp", verbose: bool = False
+        ingredients: List[str], parser: str = "nlp", verbose: bool = False,
+        accept_language: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Resolve one or more ingredient lines in a single call.
 
@@ -69,6 +70,7 @@ def register_parser_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
                 "openai" (only if the Mealie server is configured for it).
             verbose: If True, return Mealie's untouched responses, including the
                 full food/unit records and the per-field confidence breakdown.
+            accept_language: Optional locale such as fr or fr-FR for localized parsing.
 
         Returns:
             List[Dict[str, Any]]: One result per input line, in the same order,
@@ -78,5 +80,7 @@ def register_parser_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             _validate_parser(parser)
             if any(not ingredient.strip() for ingredient in ingredients):
                 raise ValueError("Ingredient cannot be empty")
-            parsed = mealie.parse_ingredients(ingredients, parser=parser)
+            parsed = mealie.parse_ingredients(
+                ingredients, parser=parser, accept_language=accept_language
+            )
             return parsed if verbose else [_flatten(p) for p in parsed]

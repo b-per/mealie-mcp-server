@@ -277,9 +277,10 @@ See [Usage Examples](USAGE_EXAMPLES.md) for detailed workflows and troubleshooti
 - `update_tool` - Update tool
 - `delete_tool` - Delete tool
 
-### Parser Tools (1 operation)
+### Parser Tools (2 operations)
 
-- `parse_ingredients` - Resolve one or more ingredient lines in one request; always returns a list
+- `parse_ingredients` - Resolve ingredient lines in one request; supports `accept_language`
+- `reparse_recipe_ingredients` - Parse and save an existing recipe's ingredients while preserving references and sections
 
 ### Meal Plan Tools (6 operations)
 
@@ -290,10 +291,10 @@ See [Usage Examples](USAGE_EXAMPLES.md) for detailed workflows and troubleshooti
 - `delete_mealplan` - Delete an entry
 - `get_todays_mealplan` - Get today's meals
 
-**Total: 65 tools**
+**Total: 66 tools**
 
 With `MEALIE_ENABLE_AI_IMPORT=true`, `import_recipe_with_ai` adds one optional
-recipe operation: **66 total tools, including 13 recipe tools**. It is absent
+recipe operation: **67 total tools, including 13 recipe tools**. It is absent
 from discovery and cannot be called when disabled.
 
 ### Migrating consolidated tools (breaking change)
@@ -466,6 +467,14 @@ parse_ingredients(ingredients=["1/4 cup chopped onion", "2 large eggs"])
 A `null` unit or food means your instance has no matching entry; create one
 with `create_food` / `create_unit`, or leave the text in the note. Pass
 `verbose=True` for Mealie's full response including per-field confidences.
+
+Use `accept_language="fr-FR"` (or another locale) for localized ingredient
+parsing. To parse and save the ingredients of an existing recipe, call
+`reparse_recipe_ingredients(slug="...", accept_language="fr-FR")`. This preserves
+ingredient references and sections and leaves other recipe fields unchanged.
+Recipe tool responses with a slug include a browser-friendly `recipeUrl`.
+
+See [FORK.md](FORK.md) for the retained fork features and upstream update workflow.
 
 ### Uploaded Assets and Nutrition Can Be Stored but Hidden
 

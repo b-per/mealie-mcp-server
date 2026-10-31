@@ -24,6 +24,7 @@ class MealieClient:
             raise ValueError("Base URL cannot be empty")
         if not api_key:
             raise ValueError("API key cannot be empty")
+        self.base_url = base_url.rstrip("/")
 
         # Third-party debug/info logs include request URLs and connection details.
         logging.getLogger("httpx").setLevel(logging.WARNING)

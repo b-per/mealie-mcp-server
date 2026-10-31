@@ -216,12 +216,12 @@ async def test_ai_import_lazy_runtime_registration(load_server, monkeypatch, val
     monkeypatch.setenv("MEALIE_ENABLE_AI_IMPORT", value)
     namespace, _, requests, factory = load_server()
     mcp = namespace["mcp"]
-    assert len(await mcp.list_tools()) == 65
+    assert len(await mcp.list_tools()) == 66
     factory.assert_not_called()
     assert requests == []
     async with server_lifespan(mcp, transport):
         tools = await mcp.list_tools()
-        assert len(tools) == (66 if enabled else 65)
+        assert len(tools) == (67 if enabled else 66)
         assert ("import_recipe_with_ai" in {t.name for t in tools}) is enabled
         async with mcp._lifespan_manager():
             assert len(await mcp.list_tools()) == len(tools)
@@ -233,7 +233,7 @@ async def test_ai_import_explicit_configuration_discovery(load_server, enabled):
     namespace, _, requests, factory = load_server()
     config = namespace["ServerConfig"]("http://mealie.invalid", "placeholder", enable_ai_import=enabled)
     mcp = namespace["create_server"](config)
-    assert len(await mcp.list_tools()) == (66 if enabled else 65)
+    assert len(await mcp.list_tools()) == (67 if enabled else 66)
     factory.assert_not_called()
     assert requests == []
 
@@ -257,7 +257,7 @@ async def test_ai_import_main_registration(load_server, monkeypatch, transport):
     with patch.object(namespace["FastMCP"], "run", autospec=True) as run:
         namespace["main"]()
     mcp = run.call_args.args[0]
-    assert len(await mcp.list_tools()) == 66
+    assert len(await mcp.list_tools()) == 67
 
 
 @pytest.mark.parametrize(
@@ -383,5 +383,37 @@ async def test_http_sessions_initialize_list_and_call_tools(load_server, monkeyp
 
     assert sum(req.url.path == "/api/recipes" for req in requests) == 2
     assert sum(req.url.path == "/api/app/about" for req in requests) == 1
+    factory.assert_called_once()
+    assert mealie_client.is_closed
+
+
+async def test_stateless_streamable_http_with_custom_path_and_json(load_server):
+    server, mealie_client, requests, factory = load_server()
+    app = server["mcp"].http_app(
+        path="/custom/mcp", transport="streamable-http",
+        stateless_http=True, json_response=True,
+    )
+    headers = {
+        "Accept": "application/json, text/event-stream",
+        "Mcp-Protocol-Version": "2025-03-26",
+    }
+    async with app.router.lifespan_context(app):
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://127.0.0.1:8765",
+        ) as client:
+            for index in range(2):
+                response = await client.post("/custom/mcp", headers=headers, json={
+                    "jsonrpc": "2.0", "id": index, "method": "tools/call",
+                    "params": {"name": "get_recipes", "arguments": {}},
+                })
+                assert response.status_code == 200
+                assert response.headers["content-type"].startswith("application/json")
+                assert "mcp-session-id" not in response.headers
+                payload = response.json()
+                assert "error" not in payload
+                assert payload["result"].get("isError") is not True
+                assert not mealie_client.is_closed
+    assert sum(req.url.path == "/api/app/about" for req in requests) == 1
+    assert sum(req.url.path == "/api/recipes" for req in requests) == 2
     factory.assert_called_once()
     assert mealie_client.is_closed

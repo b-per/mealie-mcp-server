@@ -26,7 +26,7 @@ def server(fetcher):
 async def test_ai_import_discovery(server):
     mcp, fetcher = server
     tools = await mcp.list_tools()
-    assert len(tools) == 66
+    assert len(tools) == 67
     tool = next(tool for tool in tools if tool.name == "import_recipe_with_ai")
     assert all(
         "import_recipe_with_ai" not in (other.description or "")
@@ -61,7 +61,7 @@ async def test_source_combinations(
     if has_images:
         arguments["image_paths"] = [str(image)]
     result = await invoke("import_recipe_with_ai", **arguments)
-    assert result == fetcher.recipe
+    assert result == {**fetcher.recipe, "recipeUrl": "https://mealie.example/g/home/r/test-recipe"}
     assert [(r["method"], r["url"]) for r in fetcher.requests] == [
         ("GET", "/api/groups/self"),
         ("POST", "/api/recipes/create/ai"),
