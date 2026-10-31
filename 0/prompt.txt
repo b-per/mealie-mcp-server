@@ -1,0 +1,24 @@
+check the code from upstream (this is a fork) and see if it makes sense to bring it to my fork. 
+
+also, check if features of my fork are in upstream now or not
+
+---
+
+isn't it better to always be on top of remote main and handle commits on top? i don't want to have to do too much work to kepp up with teir work
+
+---
+
+but what do you suggest then???? 
+you are not helping
+
+---
+
+what is uncommitted today?
+
+---
+
+ok, well do the work to get me on top of upstream/main with my extra features.
+
+i don't really care about tool names and input/output format (and can adopt upstream ones) ; but I want to keep the features i added, either in existing tools or in new tools
+
+i also need streamable http support.
