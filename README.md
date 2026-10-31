@@ -226,7 +226,7 @@ See [Usage Examples](USAGE_EXAMPLES.md) for detailed workflows and troubleshooti
 - `get_shopping_list_item` - Get item by ID
 - `create_shopping_list_item` - Create single item
 - `create_shopping_list_items_bulk` - Create multiple items
-- `update_shopping_list_item` - Update item (preserves fields)
+- `update_shopping_list_item` - Update item, including `label_id` (empty string clears it) (preserves fields)
 - `update_shopping_list_items_bulk` - Update multiple items
 - `delete_shopping_list_item` - Delete single item
 - `delete_shopping_list_items_bulk` - Delete multiple items
@@ -249,12 +249,16 @@ See [Usage Examples](USAGE_EXAMPLES.md) for detailed workflows and troubleshooti
 - `update_tag` - Update tag
 - `delete_tag` - Delete tag
 
-### Food Tools (5 operations)
+### Food Tools (9 operations)
 
 - `get_foods` - List/search foods (resolve IDs for structured ingredients)
+- `get_unlabeled_foods` - List newest foods without labels in one filtered request
+- `get_food_labels` - List/search available food and shopping labels
+- `create_food_label` - Create a label with an optional color
+- `set_food_labels_bulk` - Assign labels to multiple foods, preserving existing fields
 - `create_food` - Create a new food
 - `get_food` - Get by ID
-- `update_food` - Update food
+- `update_food` - Update food, including `label_id` (empty string clears the label)
 - `delete_food` - Delete food
 
 ### Unit Tools (5 operations)
@@ -286,10 +290,10 @@ See [Usage Examples](USAGE_EXAMPLES.md) for detailed workflows and troubleshooti
 - `delete_mealplan` - Delete an entry
 - `get_todays_mealplan` - Get today's meals
 
-**Total: 61 tools**
+**Total: 65 tools**
 
 With `MEALIE_ENABLE_AI_IMPORT=true`, `import_recipe_with_ai` adds one optional
-recipe operation: **62 total tools, including 13 recipe tools**. It is absent
+recipe operation: **66 total tools, including 13 recipe tools**. It is absent
 from discovery and cannot be called when disabled.
 
 ### Migrating consolidated tools (breaking change)

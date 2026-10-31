@@ -184,8 +184,14 @@ class FakeFetcher(MealieFetcher):
                 "userId": "user-1",
                 "name": "Existing list",
             }
+        if method == "GET" and resource_url == "/api/households/shopping/items":
+            return {
+                "id": resource_id, "shoppingListId": "list-1", "note": "Existing item",
+                "quantity": 1, "checked": False, "labelId": "old-label",
+            }
         # list endpoints
         if method == "GET" and url in (
+            "/api/groups/labels",
             "/api/foods",
             "/api/units",
             "/api/organizers/tools",
@@ -203,6 +209,7 @@ class FakeFetcher(MealieFetcher):
             }
         # create echoes the body with a generated id
         if method == "POST" and url in (
+            "/api/groups/labels",
             "/api/foods",
             "/api/units",
             "/api/organizers/tools",
@@ -214,6 +221,7 @@ class FakeFetcher(MealieFetcher):
             return {**deepcopy(kwargs.get("json") or {}), "id": "generated-0001"}
         # full-replace update echoes the merged body
         if method == "PUT" and resource_url in (
+            "/api/households/shopping/items",
             "/api/foods",
             "/api/units",
             "/api/organizers/tools",

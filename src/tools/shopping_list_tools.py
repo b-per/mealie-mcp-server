@@ -212,6 +212,7 @@ def register_shopping_list_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
         note: Optional[str] = None,
         quantity: Optional[float] = None,
         checked: Optional[bool] = None,
+        label_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Update a shopping list item. Use this to check/uncheck items or modify their details.
 
@@ -220,6 +221,7 @@ def register_shopping_list_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             note: Updated item description
             quantity: Updated quantity
             checked: Whether the item is checked off
+            label_id: Label UUID to assign; pass an empty string to clear it
 
         Returns:
             Dict[str, Any]: The updated shopping list item
@@ -232,6 +234,8 @@ def register_shopping_list_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
                 item_data["quantity"] = quantity
             if checked is not None:
                 item_data["checked"] = checked
+            if label_id is not None:
+                item_data["labelId"] = label_id or None
 
             if not item_data:
                 raise ValueError("At least one field must be provided to update")
